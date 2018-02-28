@@ -32,7 +32,14 @@ public:
     double getY() {double r = joystickSlerp(y, miny, maxy); return abs(r) < JOYSTICK_DEADZONE ? 0 : r;}
     bool getSW() {return sw;}
 
-    Joystick (int xPin, int yPin, swPin) {this->xPin = xPin; this->yPin = yPin; this->swPin = swPin}
+    Joystick (int xPin, int yPin, int swPin) {
+        this->xPin = xPin;
+        this->yPin = yPin;
+        this->swPin = swPin;
+        pinMode(xPin, INPUT);
+        pinMode(yPin, INPUT);
+        pinMode(swPin, INPUT);
+    }
 
     void readPositions() {
         x = analogRead(xPin);
@@ -92,7 +99,6 @@ void setup() {
     Serial.println(F("Finished radio setup"));
 
     // Pin setup
-    pinMode(BUTTON_PIN, INPUT);
     pinMode(LED_PIN, OUTPUT);
 
     // Calibrate joystick
@@ -144,7 +150,7 @@ int32_t composeMessage () {
 
     // Check button, and add result to message (0 false, 1 true)
     static bool button_down_old = false;
-    bool button_down_new = digitalRead(BUTTON_PIN) == LOW; // Button is active low
+    bool button_down_new = joy.getSW(); // Button is active low
     if (button_down_new && !button_down_old) {
         message |= CODE_BEAK_NOOT_BITMASK;
     }
