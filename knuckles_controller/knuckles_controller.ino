@@ -8,7 +8,6 @@
 #define BUTTON_PIN A5
 #define X_AXIS_PIN A7
 #define Y_AXIS_PIN A6
-#define LED_PIN 2
 #define LCDRS 8
 #define LCDEN 7
 #define LCDD4 6
@@ -23,11 +22,7 @@
 #define ARM_UP_PIN A1
 
 // Constants *******************************************************************
-#define CALIBRATION_TIME_MILLIS 2000 // Time for calibrating inputs (like joystick) at the start
-#define TIMEOUT_MICROSECENDS 2000
-#define JOYSTICK_RESEND_PERIOD_MILLIS 1000
 #define JOYSTICK_DEADZONE 0.05
-#define SERIAL_MESSAGE_START 0b00000000111111110000000011111111
 
 byte writeAdress[6] = "Pingu";
 byte readAdress[6] = "Singu";
@@ -85,7 +80,7 @@ Joystick joy (X_AXIS_PIN, Y_AXIS_PIN, BUTTON_PIN);
 RF24 radio(RADIOCE, RADIOCS);
 LiquidCrystal lcd (LCDRS, LCDEN, LCDD4, LCDD5, LCDD6, LCDD7);
 int lcd_draw_countdown = 0;
-const int lcd_draw_countdown_start = 5;
+const int lcd_draw_countdown_start = 1;
 
 // Function declarations *******************************************************
 void sendSignal(const uint32_t & value);
@@ -98,23 +93,15 @@ void setup() {
 
     // Radio setup
     radio.begin();
-    radio.setPALevel(RF24_PA_LOW);
+    radio.setPALevel(RF24_PA_HIGH);
     radio.enableAckPayload();                         // We will be using the Ack Payload feature, so please enable it
     radio.enableDynamicPayloads();                    // Ack payloads are dynamic payloads
     radio.openWritingPipe(writeAdress);
     radio.openReadingPipe(1, readAdress);
-    radio.startListening();
 
     // Pin setup
-    pinMode(LED_PIN, OUTPUT);
     pinMode(ARM_UP_PIN, INPUT_PULLUP);
     pinMode(ARM_DOWN_PIN, INPUT_PULLUP);
-
-    // Calibrate joystick
-    long start_time = millis();
-    while (millis() - start_time < CALIBRATION_TIME_MILLIS) {
-        joy.readPositions();
-    }
 
     // LCD setup
     lcd.begin(16,2);
@@ -122,10 +109,10 @@ void setup() {
 
     // Settinginterrupts
     pinMode(RADIO_INTERRUPT_PIN, INPUT_PULLUP);
-    delay(500);
+    delay(50);
     attachInterrupt(0, radioInterrupt, LOW);             // Attach interrupt handler to interrupt #0 (using pin 2) on BOTH the sender and receiver
 
-    delay(500);
+    delay(50);
 }
 
 void loop() {
@@ -139,13 +126,7 @@ void loop() {
     lcd_draw_countdown--;
 
     Serial.println(message, BIN);
-    delay(5);
-}
-
-void writeLCD (uint32_t message) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(message, BIN);
+    delay(100);
 }
 
 void writeLCDjoysticks () {
@@ -205,28 +186,17 @@ void sendSignal(const uint32_t & message_out) {
 }
 
 void radioInterrupt (void) {
+    Serial.println(F("hey"));
     bool tx, fail, rx; // tx: successful transmit. fail: failed transmit. rx: recieved message
     radio.whatHappened(tx, fail, rx); // What happened?
 
-    if ( tx ) {}
+    if ( tx ) { Serial.println(F("sent!")); }
 
-    if ( fail ) {}
+    if ( fail ) { Serial.println(F("FAIL!!")); }
 
     if ( rx || radio.available()) {
         uint32_t ack_message;
         radio.read(&ack_message, sizeof(ack_message));
-        Serial.print(F("\t"));
         Serial.println(ack_message);
     }
-}
-
-void writeMessageToPyserial(uint32_t message) {
-    for (int i = 3; i >= 0; i--) {
-        Serial.write(128);
-        Serial.write((byte)(message >> (i*8)));
-    }
-}
-
-void writeEndToPyserial() {
-    Serial.write(255);
 }

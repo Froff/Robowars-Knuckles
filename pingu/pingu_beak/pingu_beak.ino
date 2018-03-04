@@ -51,7 +51,7 @@ void setup() {
     digitalWrite(VOLUME_DOWN_PIN, HIGH);
 
     playRandom();
-    tmrpcm.setVolume(3);
+    tmrpcm.setVolume(6);
 }
 
 void loop() {
@@ -61,12 +61,6 @@ void loop() {
 
     if (wasPressedDown(NOOT_PIN, noot_old)) {
         playRandom();
-    }
-    if (wasPressedDown(VOLUME_UP_PIN, volume_up_old)) {
-        tmrpcm.volume(1);
-    }
-    if (wasPressedDown(VOLUME_DOWN_PIN, volume_down_old)) {
-        tmrpcm.volume(0);
     }
 }
 
